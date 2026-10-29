@@ -13,3 +13,11 @@
   - _Verify: docker compose -f docker-compose.prod.yml config --quiet --no-interpolate_
   - _Verify: docker build -t leave-tracker-old:verify ._
   - _Mode: devops_
+
+- [ ] 3. Deployment setup for Fly.io
+  - Write what Fly.io needs to build and run the app there, and do not deploy it: for example its configuration file, a Dockerfile, or the workflow of a pipeline that deploys it.
+  - Read every secret from an environment variable. Never write a secret in a file.
+  - _Requirements: 1.1_
+  - _Files: **_
+  - _Verify: npm test_
+  - _Mode: devops_
