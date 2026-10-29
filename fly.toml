@@ -1,0 +1,46 @@
+# Fly.io configuration for Leave Tracker.
+# Nothing here is deployed by this file: `fly deploy` (or the workflow in
+# .github/workflows/fly-deploy.yml) is what builds and releases it.
+#
+# TODO(person): replace "leave-tracker-old" with the app name you create with
+# `fly apps create <name>`, and set the primary_region you want to run in.
+
+app = "leave-tracker-old"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  # The server reads PORT (src/server.js line 16); Fly routes to this port.
+  PORT = "3000"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # Two machines so a rolling deploy keeps one serving traffic.
+  min_machines_running = 1
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+# The app really serves GET /api/health (src/server.js), so the platform check
+# uses it. Fly restarts a machine whose check keeps failing.
+[[http_service.checks]]
+  interval = "15s"
+  timeout = "5s"
+  grace_period = "10s"
+  method = "GET"
+  path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+
+# Secrets are never written here. Set them with `fly secrets set NAME=value`
+# (or the FLY_API_TOKEN secret in the workflow); the app reads them from the
+# environment at runtime.

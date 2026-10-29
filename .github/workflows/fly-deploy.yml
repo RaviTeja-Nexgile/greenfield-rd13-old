@@ -1,0 +1,57 @@
+name: Deploy to Fly.io
+
+# Builds the image from the Dockerfile and releases it to Fly.io.
+# Nothing runs until a person starts it by hand, and the release then waits for
+# the required reviewers of the "production" environment.
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Release the current commit to Fly.io (waits for a required reviewer)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fly-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    if: inputs.deploy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4 # unchecked (from memory)
+      # The ubuntu-24.04 runner ships Node 22, which satisfies package.json
+      # "engines": ">=22"; the project has no dependencies to cache.
+      - run: node --version
+      - run: npm ci
+      - run: npm test
+
+  deploy:
+    needs: test
+    if: inputs.deploy
+    runs-on: ubuntu-24.04
+    # The person must create this environment and add required reviewers
+    # (Settings -> Environments -> production -> Required reviewers). The YAML
+    # alone does not create them; without them the manual trigger is the only gate.
+    environment: production
+    steps:
+      - uses: actions/checkout@v4 # unchecked (from memory)
+      # flyctl comes from the official install script rather than a third-party
+      # action, so no action commit SHA has to be pinned here.
+      # TODO(person): pin the flyctl release you want (FLYCTL_VERSION, e.g. a
+      # vX.Y.Z tag from https://github.com/superfly/flyctl/releases) instead of
+      # the latest one the script installs.
+      - name: Install flyctl
+        run: curl -L https://fly.io/install.sh | sh
+        env:
+          FLYCTL_INSTALL: /home/runner/.fly
+      # FLY_API_TOKEN is a repository/environment secret (a Fly deploy token from
+      # `fly tokens create deploy`); it is never written in this file.
+      - name: Deploy
+        run: ~/.fly/bin/flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
