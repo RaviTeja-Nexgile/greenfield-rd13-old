@@ -16,7 +16,7 @@
   - _Mode: devops_
   - _Issue: #2_
 
-- [ ] 3. Deployment setup for Fly.io
+- [x] 3. Deployment setup for Fly.io
   - Write what Fly.io needs to build and run the app there, and do not deploy it: for example its configuration file, a Dockerfile, or the workflow of a pipeline that deploys it.
   - Read every secret from an environment variable. Never write a secret in a file.
   - _Requirements: 1.1_
